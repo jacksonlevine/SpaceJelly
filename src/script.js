@@ -29,7 +29,7 @@ pointLight.position.set(0, 0, 0);
 scene.add(pointLight);
 
 // Particles
-const particleGeometry = new THREE.BufferGeometry; // Geometry for stars
+const particlesGeometry = new THREE.BufferGeometry(); // Geometry for stars
 const particlesCount = 15000; // particles to be created. Is equiv to 5000 * 3 (x,y,z vertices)
 const vertices = new Float32Array(particlesCount); // float of 32 bits (from buffer geo - vertices arr[x, y, z])
 
@@ -37,8 +37,25 @@ const vertices = new Float32Array(particlesCount); // float of 32 bits (from buf
 for( let i = 0; i < particlesCount; i++)
 {
   vertices[i] = (Math.random() - 0.5) * 100;// mult (Math.rand - 0.5 to +.5)by 100; Range -50 through +50
-  
 }
+particlesGeometry.setAttribute(
+  "position", 
+  new THREE.BufferAttribute(vertices, 3) // stores data ie. vertices position, custom attributes// 3 vals [xyz] per docs
+)
+
+// Texture (loader fxn)
+const textureLoader = new THREE.TextureLoader();
+const particleTexture = textureLoader.load("/textures/particles/star.png"); // TODO // Adds particle textures
+
+// Material
+const particlesMaterial = new THREE.PointsMaterial({
+  map: particleTexture, // Texture
+  size: 0.2, // size of particles
+  sizeAttenuation: true //bool// particle sz gets smaller (val:0-3) as the camera zooms out & vice versa
+});
+
+const stars = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(stars);
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({
