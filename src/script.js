@@ -61,6 +61,19 @@ const particlesMaterial = new THREE.PointsMaterial({
 const stars = new THREE.Points(particlesGeometry, particlesMaterial);
 scene.add(stars);
 
+let saturn;
+// Import the planet saturn model // TODO Change to jelly fish
+const gltfLoader = new GLTFLoader(); // Create a loader
+gltfLoader.load("/scene.gltf", (gltf) => {
+  console.log("success");
+  console.log("SATURN HERE", gltf);
+  saturn = gltf.scene.children[0];
+  saturn.position.set(0, 0, 0);
+  saturn.scale.set(0.001, 0.001, 0.001);
+
+  scene.add(saturn);
+});
+
 // Renderer
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas, // Canvas is the canvas element from html
@@ -70,6 +83,15 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Avoid pixelatio
 
 // Animate
 const animate = () => {
+    // Update the controls
+    controls.update();
+
+    // Rotate the stars a bit, frame by frame
+    stars.rotation.y -= 0.001;
+    if(saturn != null)
+    {
+      saturn.rotation.z -= 0.001;
+    }
     renderer.render(scene, camera);
 
     window.requestAnimationFrame(animate);

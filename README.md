@@ -19,3 +19,4 @@ The project will be created from scratch and it's easy to follow for beginners.
 
 - [Emilian Kasemi](https://www.github.com/theringsofsaturn)
 
+DOWNLOAD LINK FOR MODEL (PUT IN THE ./static FOLDER) https://drive.google.com/file/d/1myP0a8W2dkGzGyRsGf3Les0iEhundW0I/view?usp=sharing 
