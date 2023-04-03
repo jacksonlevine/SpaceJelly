@@ -28,6 +28,18 @@ const pointLight = new THREE.PointLight(0xffffff, 2); // Create a point light
 pointLight.position.set(0, 0, 0);
 scene.add(pointLight);
 
+// Particles
+const particleGeometry = new THREE.BufferGeometry; // Geometry for stars
+const particlesCount = 15000; // particles to be created. Is equiv to 5000 * 3 (x,y,z vertices)
+const vertices = new Float32Array(particlesCount); // float of 32 bits (from buffer geo - vertices arr[x, y, z])
+
+// loop through all arr[x,y,z] w for loop (rand position)
+for( let i = 0; i < particlesCount; i++)
+{
+  vertices[i] = (Math.random() - 0.5) * 100;// mult (Math.rand - 0.5 to +.5)by 100; Range -50 through +50
+  
+}
+
 // Renderer
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas, // Canvas is the canvas element from html
@@ -43,3 +55,4 @@ const animate = () => {
 };
 
 animate();
+
