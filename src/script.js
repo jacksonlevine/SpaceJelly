@@ -28,6 +28,10 @@ const pointLight = new THREE.PointLight(0xffffff, 2); // Create a point light
 pointLight.position.set(0, 0, 0);
 scene.add(pointLight);
 
+// Controls
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; // use to give a sense of weight
+
 // Particles
 const particlesGeometry = new THREE.BufferGeometry(); // Geometry for stars
 const particlesCount = 15000; // particles to be created. Is equiv to 5000 * 3 (x,y,z vertices)
@@ -50,7 +54,7 @@ const particleTexture = textureLoader.load("/textures/particles/star.png"); // T
 // Material
 const particlesMaterial = new THREE.PointsMaterial({
   map: particleTexture, // Texture
-  size: 0.2, // size of particles
+  size: 1, // size of particles
   sizeAttenuation: true //bool// particle sz gets smaller (val:0-3) as the camera zooms out & vice versa
 });
 
