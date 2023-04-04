@@ -40,8 +40,9 @@ const vertices = new Float32Array(particlesCount); // float of 32 bits (from buf
 // loop through all arr[x,y,z] w for loop (rand position)
 for( let i = 0; i < particlesCount; i++)
 {
-  vertices[i] = (Math.random() - 0.5) * 500;// mult (Math.rand - 0.5 to +.5)by 100; Range -50 through +50
+  vertices[i] = (Math.random() - 0.5) * 500; // mult (Math.rand - 0.5 to +.5)by 100; Range -50 through +50
 }
+
 particlesGeometry.setAttribute(
   "position", 
   new THREE.BufferAttribute(vertices, 3) // stores data ie. vertices position, custom attributes// 3 vals [xyz] per docs
@@ -75,6 +76,7 @@ gltfLoader.load("/scene.gltf", (gltf) => {
 
   scene.add(saturn);
 });
+
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({
