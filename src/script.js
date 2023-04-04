@@ -19,7 +19,7 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.z = 3; // Pull the camera back a bit so you can see the object
 scene.add(camera);
 
-// Lights
+//Lights
 const ambientLight = new THREE.AmbientLight(0xffffff, 2);  // Create a basic white universal light  // TODO: Change this to a fancier light!
 ambientLight.position.set(0, 0, 0); // Set position of the light
 scene.add(ambientLight); 
@@ -49,13 +49,15 @@ particlesGeometry.setAttribute(
 
 // Texture (loader fxn)
 const textureLoader = new THREE.TextureLoader();
-const particleTexture = textureLoader.load("/textures/particles/star.png"); // TODO // Adds particle textures
+const particleTexture = textureLoader.load("/textures/particles/bubble.png"); // TODO // Adds particle textures
 
 // Material
 const particlesMaterial = new THREE.PointsMaterial({
   map: particleTexture, // Texture
   size: 1, // size of particles
-  sizeAttenuation: true //bool// particle sz gets smaller (val:0-3) as the camera zooms out & vice versa
+  sizeAttenuation: true, //bool// particle sz gets smaller (val:0-3) as the camera zooms out & vice versa
+  transparent: true // removes bkgrd from .png
+
 });
 
 const stars = new THREE.Points(particlesGeometry, particlesMaterial);
@@ -77,6 +79,7 @@ gltfLoader.load("/scene.gltf", (gltf) => {
 // Renderer
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas, // Canvas is the canvas element from html
+  alpha: true
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Avoid pixelation on high res screens
