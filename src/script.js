@@ -49,34 +49,65 @@ particlesGeometry.setAttribute(
 
 // Texture (loader fxn)
 const textureLoader = new THREE.TextureLoader();
-const particleTexture = textureLoader.load("/textures/particles/star.png"); // TODO // Adds particle textures
+const particleTexture = textureLoader.load("/textures/particles/bubble.png"); // TODO // Adds particle textures
 
 // Material
 const particlesMaterial = new THREE.PointsMaterial({
   map: particleTexture, // Texture
   size: 1, // size of particles
-  sizeAttenuation: true //bool// particle sz gets smaller (val:0-3) as the camera zooms out & vice versa
+  sizeAttenuation: true, //bool// particle sz gets smaller (val:0-3) as the camera zooms out & vice versa
+  transparent: true,
+  depthWrite: false
 });
 
 const stars = new THREE.Points(particlesGeometry, particlesMaterial);
-scene.add(stars);
+//scene.add(stars);
 
-let saturn;
-// Import the planet saturn model // TODO Change to jelly fish
 const gltfLoader = new GLTFLoader(); // Create a loader
-gltfLoader.load("/scene.gltf", (gltf) => {
-  console.log("success");
-  console.log("SATURN HERE", gltf);
-  saturn = gltf.scene.children[0];
-  saturn.position.set(0, 0, 0);
-  saturn.scale.set(0.001, 0.001, 0.001);
+let saturn;
+let sun;
 
-  scene.add(saturn);
-});
+// make async loader
+const loadAsync = url => {
+  return new Promise(resolve => {
+    gltfLoader.load(url, gltf => {
+      resolve(gltf)
+    })
+  })
+}
+Promise.all([loadAsync('./scene.gltf'), loadAsync('./scene2.gltf')]).then(models => {
+  // get what you need from the models array
+  const saturn = models[0].scene.children[0]
+  const sun = models[1].scene.children[0]
+    saturn.position.set(0, 0, 0);
+    saturn.scale.set(0.001, 0.001, 0.001);
+    sun.position.set(-25, 0, 0);
+    sun.scale.set(10, 10, 10);
+
+    console.log("saturn", saturn);
+    console.log("sun", sun);
+  // add both models to the scene
+  scene.add(saturn)
+  scene.add(sun)
+})
+
+// let saturn;
+// // Import the planet saturn model // TODO Change to jelly fish
+// const gltfLoader = new GLTFLoader(); // Create a loader
+// gltfLoader.load("/scene.gltf", (gltf) => {
+//   console.log("success");
+//   console.log("SATURN HERE", gltf);
+//   saturn = gltf.scene.children[0];
+//   saturn.position.set(0, 0, 0);
+//   saturn.scale.set(0.001, 0.001, 0.001);
+
+//   scene.add(saturn);
+// });
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas, // Canvas is the canvas element from html
+  alpha: true
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Avoid pixelation on high res screens
@@ -88,9 +119,14 @@ const animate = () => {
 
     // Rotate the stars a bit, frame by frame
     stars.rotation.y -= 0.001;
+
     if(saturn != null)
     {
       saturn.rotation.z -= 0.001;
+    }
+    if(sun != null)
+    {
+      sun.rotation.z -= 0.001;
     }
     renderer.render(scene, camera);
 

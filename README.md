@@ -14,7 +14,6 @@ The project will be created from scratch and it's easy to follow for beginners.
 
 [Click here!](https://youtu.be/_RASm_aOfrE)
 
-
 ## Authors
 
 - [Emilian Kasemi](https://www.github.com/theringsofsaturn)
