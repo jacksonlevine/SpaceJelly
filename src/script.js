@@ -34,13 +34,13 @@ controls.enableDamping = true; // use to give a sense of weight
 
 // Particles
 const particlesGeometry = new THREE.BufferGeometry(); // Geometry for stars
-const particlesCount = 15000; // particles to be created. Is equiv to 5000 * 3 (x,y,z vertices)
+const particlesCount = 100000; // particles to be created. Is equiv to 5000 * 3 (x,y,z vertices)
 const vertices = new Float32Array(particlesCount); // float of 32 bits (from buffer geo - vertices arr[x, y, z])
 
 // loop through all arr[x,y,z] w for loop (rand position)
 for( let i = 0; i < particlesCount; i++)
 {
-  vertices[i] = (Math.random() - 0.5) * 100;// mult (Math.rand - 0.5 to +.5)by 100; Range -50 through +50
+  vertices[i] = (Math.random() - 0.5) * 150;// mult (Math.rand - 0.5 to +.5)by 100; Range -50 through +50
 }
 particlesGeometry.setAttribute(
   "position", 
@@ -54,7 +54,7 @@ const particleTexture = textureLoader.load("/textures/particles/bubble.png"); //
 // Material
 const particlesMaterial = new THREE.PointsMaterial({
   map: particleTexture, // Texture
-  size: 1, // size of particles
+  size: .6, // size of particles
   sizeAttenuation: true, //bool// particle sz gets smaller (val:0-3) as the camera zooms out & vice versa
   transparent: true,
   depthWrite: false
