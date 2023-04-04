@@ -61,7 +61,7 @@ const particlesMaterial = new THREE.PointsMaterial({
 });
 
 const stars = new THREE.Points(particlesGeometry, particlesMaterial);
-//scene.add(stars);
+scene.add(stars);
 
 const gltfLoader = new GLTFLoader(); // Create a loader
 let saturn;
