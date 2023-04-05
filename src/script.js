@@ -34,13 +34,13 @@ controls.enableDamping = true; // use to give a sense of weight
 
 // Particles
 const particlesGeometry = new THREE.BufferGeometry(); // Geometry for stars
-const particlesCount = 100000; // particles to be created. Is equiv to 5000 * 3 (x,y,z vertices)
+const particlesCount = 50000; // particles to be created. Is equiv to 5000 * 3 (x,y,z vertices)
 const vertices = new Float32Array(particlesCount); // float of 32 bits (from buffer geo - vertices arr[x, y, z])
 
 // loop through all arr[x,y,z] w for loop (rand position)
 for( let i = 0; i < particlesCount; i++)
 {
-  vertices[i] = (Math.random() - 0.5) * 150;// mult (Math.rand - 0.5 to +.5)by 100; Range -50 through +50
+  vertices[i] = (Math.random() - 0.5) * 50;// mult (Math.rand - 0.5 to +.5)by 100; Range -50 through +50
 }
 particlesGeometry.setAttribute(
   "position", 
@@ -64,7 +64,6 @@ const stars = new THREE.Points(particlesGeometry, particlesMaterial);
 scene.add(stars);
 
 const gltfLoader = new GLTFLoader(); // Create a loader
-let saturn;
 let sun;
 
 // make async loader
@@ -75,22 +74,18 @@ const loadAsync = url => {
     })
   })
 }
-Promise.all( [loadAsync('./saturn/scene.gltf'), loadAsync('./sun/scene.gltf'), loadAsync('./jellyfish/scene.gltf')] ).then(models => {
+Promise.all( [loadAsync('./sun/scene.gltf'), loadAsync('./jellyfish/scene.gltf')] ).then(models => {
   // get what you need from the models array
-  const saturn = models[0].scene.children[0]
-    saturn.position.set(0, 0, 0);
-    saturn.scale.set(0.001, 0.001, 0.001);
-  const sun = models[1].scene.children[0]
+  const sun = models[0].scene.children[0]
     sun.position.set(-15, 0, 0);
     sun.scale.set(0.1, 0.1, 0.1);
-  const jf = models[2].scene.children[0]
+  const jf = models[1].scene.children[0]
     jf.position.set(5, 0, 0);
     jf.scale.set(0.01, 0.01, 0.01);
 
-    console.log("saturn", saturn);
     console.log("sun", sun);
   // add both models to the scene
-  scene.add(saturn)
+
   scene.add(sun)
   scene.add(jf)
 })
@@ -128,10 +123,7 @@ const animate = () => {
     stars.rotation.y -= 0.001;
 
     //Check for null because models are loaded Async and this function isnt, this function will potentially fire before they are loaded.
-    if(saturn != null) 
-    {
-      saturn.rotation.z -= 0.001;
-    }
+
     // if(sun != null)
     // {
     //   sun.rotation.z -= 0.001;
