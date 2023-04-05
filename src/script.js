@@ -3,6 +3,22 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
+class InputHandler
+{
+  constructor()
+  {
+    this.left = false;
+    this.right = false;
+    this.forward = false;
+    this.back = false;
+    this.up = false;
+    this.down = false;
+  }
+}
+
+let myInput = new InputHandler();
+
+
 // Canvas
 const canvas = document.querySelector("canvas");
 
@@ -41,35 +57,32 @@ addEventListener(
 )
 
 // Particles
-const particlesGeometry = new THREE.BufferGeometry(); // Geometry for stars
-const particlesCount = 50000; // particles to be created. Is equiv to 5000 * 3 (x,y,z vertices)
-const vertices = new Float32Array(particlesCount); // float of 32 bits (from buffer geo - vertices arr[x, y, z])
+const meshGeometry = new THREE.BufferGeometry(); // Geometry for stars
 
-// loop through all arr[x,y,z] w for loop (rand position)
-for( let i = 0; i < particlesCount; i++)
-{
-  vertices[i] = (Math.random() - 0.5) * 50;// mult (Math.rand - 0.5 to +.5)by 100; Range -50 through +50
-}
-particlesGeometry.setAttribute(
+const vertices = new Float32Array( [
+	-1.0, -1.0,  1.0,
+	 1.0, -1.0,  1.0,
+	 1.0,  1.0,  1.0,
+
+	 1.0,  1.0,  1.0,
+	-1.0,  1.0,  1.0,
+	-1.0, -1.0,  1.0
+] );
+
+meshGeometry.setAttribute(
   "position", 
   new THREE.BufferAttribute(vertices, 3) // stores data ie. vertices position, custom attributes// 3 vals [xyz] per docs
 )
 
 // Texture (loader fxn)
-const textureLoader = new THREE.TextureLoader();
-const particleTexture = textureLoader.load("/textures/particles/bubble.png"); // TODO // Adds particle textures
+//const textureLoader = new THREE.TextureLoader();
+//const particleTexture = textureLoader.load("/textures/particles/bubble.png"); // TODO // Adds particle textures
 
 // Material
-const particlesMaterial = new THREE.PointsMaterial({
-  map: particleTexture, // Texture
-  size: .6, // size of particles
-  sizeAttenuation: true, //bool// particle sz gets smaller (val:0-3) as the camera zooms out & vice versa
-  transparent: true,
-  depthWrite: false
-});
+const meshMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
 
-const stars = new THREE.Points(particlesGeometry, particlesMaterial);
-scene.add(stars);
+const mesh = new THREE.Mesh(meshGeometry, meshMaterial );
+scene.add(mesh);
 
 const gltfLoader = new GLTFLoader(); // Create a loader
 let sun;
@@ -98,21 +111,53 @@ Promise.all( [loadAsync('./sun/scene.gltf'), loadAsync('./jellyfish/scene.gltf')
   scene.add(jf)
 })
 
-// let saturn;
-// // Import the planet saturn model // TODO Change to jelly fish
-// const gltfLoader = new GLTFLoader(); // Create a loader
-// gltfLoader.load("/scene.gltf", (gltf) => {
-//   console.log("success");
+const onKeyDown = function (event) {
+  switch (event.code) {
+      case 'KeyW':
+          myInput.forward = true;
+          break
+      case 'KeyA':
+          myInput.left = true;
+          break
+      case 'KeyS':
+          myInput.back = true;
+          break
+      case 'KeyD':
+          myInput.right = true;
+          break
+      case 'Space':
+          myInput.up = true;
+          break
+      case 'ShiftLeft':
+          myInput.down = true;
+          break
+  }
+}
+document.addEventListener('keydown', onKeyDown, false)
 
-//   saturn = gltf.scene.children[0];
-
-//   console.log("SATURN HERE", saturn);
-//   saturn.position.set(0, 0, 0);
-//   saturn.scale.set(.0001, .0001, .0001);
-
-//   scene.add(saturn);
-// });
-
+const onKeyUp = function (event) {
+  switch (event.code) {
+      case 'KeyW':
+          myInput.forward = false;
+          break
+      case 'KeyA':
+          myInput.left = false;
+          break
+      case 'KeyS':
+          myInput.back = false;
+          break
+      case 'KeyD':
+          myInput.right = false;
+          break
+      case 'Space':
+          myInput.up = false;
+          break
+      case 'ShiftLeft':
+          myInput.down = false;
+          break
+  }
+}
+document.addEventListener('keyup', onKeyUp, false)
 // Renderer
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas, // Canvas is the canvas element from html
@@ -125,7 +170,31 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Avoid pixelatio
 // Animate
 const animate = () => {
     // // Update the controls
-    // controls.update(1);
+    if(myInput.forward)
+    {
+      controls.moveForward(0.25);
+    }
+    if(myInput.back)
+    {
+      controls.moveForward(-0.25);
+    }
+    if(myInput.right)
+    {
+      controls.moveRight(0.25);
+    }
+    if(myInput.left)
+    {
+      controls.moveRight(-0.25);
+    }
+    if(myInput.up)
+    {
+      camera.position.y += 0.2;
+    }
+    if(myInput.down)
+    {
+      camera.position.y -= 0.2;
+    }
+
 
     //Render the scene
     renderer.render(scene, camera);
