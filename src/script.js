@@ -1,6 +1,6 @@
 import "./style.css";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.js';
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 // Canvas
@@ -29,8 +29,8 @@ pointLight.position.set(0, 0, 0);
 scene.add(pointLight);
 
 // Controls
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true; // use to give a sense of weight
+const controls = new FirstPersonControls(camera, canvas);
+controls.enableDamping = false; // use to give a sense of weight
 
 // Particles
 const particlesGeometry = new THREE.BufferGeometry(); // Geometry for stars
