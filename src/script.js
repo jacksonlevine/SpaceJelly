@@ -1,6 +1,6 @@
 import "./style.css";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 // Canvas
@@ -29,8 +29,16 @@ pointLight.position.set(0, 0, 0);
 scene.add(pointLight);
 
 // Controls
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true; // use to give a sense of weight
+const controls = new PointerLockControls(camera, canvas);
+controls.enableDamping = false; // use to give a sense of weight
+controls.constrainVertical = true;
+addEventListener(
+  'click',
+  function () {
+      controls.lock()
+  },
+  false
+)
 
 // Particles
 const particlesGeometry = new THREE.BufferGeometry(); // Geometry for stars
@@ -116,18 +124,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Avoid pixelatio
 
 // Animate
 const animate = () => {
-    // Update the controls
-    controls.update();
-
-    // Rotate the stars a bit, frame by frame
-    stars.rotation.y -= 0.001;
-
-    //Check for null because models are loaded Async and this function isnt, this function will potentially fire before they are loaded.
-
-    // if(sun != null)
-    // {
-    //   sun.rotation.z -= 0.001;
-    // }
+    // // Update the controls
+    // controls.update(1);
 
     //Render the scene
     renderer.render(scene, camera);
