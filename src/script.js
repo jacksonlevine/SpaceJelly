@@ -26,11 +26,11 @@ class World
   {
     for(let j = 0; j < 20; j++)
     {
-      for(let i = -1000; i < 1000; i++)
+      for(let i = -500; i < 500; i++)
       {
-        for(let k = -1000; k < 1000; k++)
+        for(let k = -500; k < 500; k++)
         {
-          if(ImprovedNoise.noise(j/25, i/25, k/25) > 0.5) { this.data.set(i+','+j+','+k, Number.parseInt(1)) } 
+          if(ImprovedNoise.noise(j/25, i/25, k/25) > 0.2) { this.data.set(i+','+j+','+k, Number.parseInt(1)) } 
         }
       }
     } 
