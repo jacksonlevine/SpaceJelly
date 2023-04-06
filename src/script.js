@@ -16,6 +16,29 @@ class InputHandler
   }
 }
 
+class World
+{
+  constructor()
+  {
+    this.data = new Map();
+  }
+  generate()
+  {
+    for(let j = 0; j < 20; j++)
+    {
+      for(let i = -1000; i < 1000; i++)
+      {
+        for(let k = -1000; k < 1000; k++)
+        {
+          if(Math.random()*10 < 1) { this.data.set(i+','+j+','+k, Number.parseInt(1)) } 
+        }
+      }
+    } 
+  }
+}
+
+let world = new World();
+world.generate();
 let myInput = new InputHandler();
 
 
@@ -36,12 +59,12 @@ camera.position.z = 3; // Pull the camera back a bit so you can see the object
 scene.add(camera);
 
 // Lights
-const ambientLight = new THREE.AmbientLight(0xffffff, 2);  // Create a basic white universal light  // TODO: Change this to a fancier light!
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);  // Create a basic white universal light  // TODO: Change this to a fancier light!
 ambientLight.position.set(0, 0, 0); // Set position of the light
 scene.add(ambientLight); 
 
-const pointLight = new THREE.PointLight(0xffffff, 2); // Create a point light
-pointLight.position.set(0, 0, 0);
+const pointLight = new THREE.PointLight(0xffffff, 10); // Create a point light
+pointLight.position.set(-10, 50, 0);
 scene.add(pointLight);
 
 // Controls
@@ -56,33 +79,235 @@ addEventListener(
   false
 )
 
-// Particles
-const meshGeometry = new THREE.BufferGeometry(); // Geometry for stars
 
-const vertices = new Float32Array( [
-	-1.0, -1.0,  1.0,
-	 1.0, -1.0,  1.0,
-	 1.0,  1.0,  1.0,
-
-	 1.0,  1.0,  1.0,
-	-1.0,  1.0,  1.0,
-	-1.0, -1.0,  1.0
-] );
-
-meshGeometry.setAttribute(
-  "position", 
-  new THREE.BufferAttribute(vertices, 3) // stores data ie. vertices position, custom attributes// 3 vals [xyz] per docs
-)
-
-// Texture (loader fxn)
-//const textureLoader = new THREE.TextureLoader();
-//const particleTexture = textureLoader.load("/textures/particles/bubble.png"); // TODO // Adds particle textures
+const chunk_height = 20;
+const chunk_width = 16;
 
 // Material
-const meshMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+const meshMaterial = new THREE.MeshLambertMaterial( { color: 0xff0000,
+depthWrite:true } );
 
-const mesh = new THREE.Mesh(meshGeometry, meshMaterial );
-scene.add(mesh);
+class Chunk
+{
+  constructor()
+  {
+    this.meshGeometry = new THREE.BufferGeometry();
+    this.vertices = new Float32Array(3);
+    this.mesh = new THREE.Mesh(this.meshGeometry, meshMaterial );
+    this.x = 0; //multiply x and z by 16 to get real-world position
+    this.z = 0; 
+  }
+  buildmesh(newx, newz)
+  {
+    this.x = newx;
+    this.z = newz;
+    let newVerts = [];
+    for(let j = 0; j < chunk_height; j++)
+    {
+      for(let i = 0; i < chunk_width; i++)
+      {
+        for(let k = 0; k < chunk_width; k++)
+        {
+          if(world.data.has(""+((this.x*16)+i)+","+(j)+","+((this.z*16)+k)))
+          {
+            if(!world.data.has(""+((this.x*16)+i-1)+","+(j)+","+((this.z*16)+k)))
+            {
+              newVerts.push(i, j, k);
+              newVerts.push(i, j, k+1);
+              newVerts.push(i, j+1, k+1);
+              newVerts.push(i, j+1, k+1);
+              newVerts.push(i, j+1, k);
+              newVerts.push(i, j, k);
+            }
+            if(!world.data.has(""+((this.x*16)+i)+","+(j)+","+((this.z*16)+k-1)))
+            {
+              newVerts.push(i, j, k);
+              newVerts.push(i, j+1, k);
+              newVerts.push(i+1, j+1, k);
+              newVerts.push(i+1, j+1, k);
+              newVerts.push(i+1, j, k);
+              newVerts.push(i, j, k);
+            }
+            if(!world.data.has(""+((this.x*16)+i+1)+","+(j)+","+((this.z*16)+k)))
+            {
+              newVerts.push(i+1, j, k);
+              newVerts.push(i+1, j+1, k);
+              newVerts.push(i+1, j+1, k+1);
+              newVerts.push(i+1, j+1, k+1);
+              newVerts.push(i+1, j, k+1);
+              newVerts.push(i+1, j, k);
+            }
+            if(!world.data.has(""+((this.x*16)+i)+","+(j)+","+((this.z*16)+k+1)))
+            {
+              newVerts.push(i, j, k+1);
+              newVerts.push(i+1, j, k+1);
+              newVerts.push(i+1, j+1, k+1);
+              newVerts.push(i+1, j+1, k+1);
+              newVerts.push(i, j+1, k+1);
+              newVerts.push(i, j, k+1);
+            }
+            if(!world.data.has(""+((this.x*16)+i)+","+(j-1)+","+((this.z*16)+k)))
+            {
+              newVerts.push(i, j, k);
+              newVerts.push(i+1, j, k);
+              newVerts.push(i+1, j, k+1);
+              newVerts.push(i+1, j, k+1);
+              newVerts.push(i, j, k+1);
+              newVerts.push(i, j, k);
+            }
+            if(!world.data.has(""+((this.x*16)+i)+","+(j+1)+","+((this.z*16)+k)))
+            {
+              newVerts.push(i, j+1, k);
+              newVerts.push(i, j+1, k+1);
+              newVerts.push(i+1, j+1, k+1);
+              newVerts.push(i+1, j+1, k+1);
+              newVerts.push(i+1, j+1, k);
+              newVerts.push(i, j+1, k);
+            }
+          }
+        }
+      }
+    }
+    this.vertices = new Float32Array(newVerts);
+    this.meshGeometry.setAttribute(
+      "position", 
+      new THREE.BufferAttribute(this.vertices, 3) 
+    )
+    this.mesh.position.set(this.x*16, 0, this.z*16);
+    this.meshGeometry.computeVertexNormals();
+    this.mesh.geometry =this.meshGeometry;
+  }
+}
+
+
+
+
+
+let chunkpool = [];
+let mappedChunks = new Map();
+let neededChunks = new Map();
+
+function updatechunks()
+{
+
+  for(let i = -6; i < 6; i++)
+  {
+    for(let k = -6; k < 6; k++)
+    {
+      let x = i+Math.round(camera.position.x/16);
+      let z = k+Math.round(camera.position.z/16);
+
+      if(!mappedChunks.has(""+x+","+z))
+      {
+        let obj = { x: x, z: z }
+        if(!neededChunks.has(""+x+","+z)) // if it needs to tell neededchunks it needs this
+        {
+          neededChunks.set(""+x+","+z, obj);
+        }
+      }
+    }
+  }
+}
+
+let chunkLoadTimer = 0;
+let chunkLoadInterval = 5;
+
+function runChunkQueue()
+{
+
+  if(neededChunks.size > 2)
+  {
+    if(chunkLoadTimer > chunkLoadInterval)
+    {
+      chunkLoadTimer = 0;
+      const needed = Array.from(neededChunks.values());
+      needed.sort((a,b)=>{  
+        let aDistance = Math.sqrt(Math.pow(a.x - camera.position.x, 2) + Math.pow(a.z - camera.position.z, 2));
+        let bDistance = Math.sqrt(Math.pow(b.x - camera.position.x, 2) + Math.pow(b.z -camera.position.z, 2));
+          if(aDistance > bDistance)
+          {
+            return 1;
+          }
+          else if(aDistance < bDistance)
+          {
+            return -1
+          }
+          else{
+            return 0;
+          }  })
+      const neededSpot = needed[0];
+      if(Math.sqrt(Math.pow(camera.position.x-neededSpot.x, 2) + Math.pow(camera.position.z - neededSpot.z, 2)) < chunk_width*7)
+      {
+        //throw this one out
+        //console.log("threw one out");
+        //neededChunks.delete(""+neededSpot.x+","+neededSpot.z)
+      }
+      //else
+      {
+      sortchunks();
+      let grabbedMesh = chunkpool.pop();
+        if(mappedChunks.has(""+grabbedMesh.x+","+grabbedMesh.z))
+        {
+          mappedChunks.delete(""+grabbedMesh.x+","+grabbedMesh.z)
+        }
+        
+
+
+        scene.remove(grabbedMesh.mesh);
+        grabbedMesh.buildmesh(neededSpot.x, neededSpot.z);
+
+        scene.add(grabbedMesh.mesh);
+        chunkpool.unshift(grabbedMesh);
+        mappedChunks.set(""+neededSpot.x+","+neededSpot.z, true);
+        neededChunks.delete(""+neededSpot.x+","+neededSpot.z)
+      }
+    }
+    else
+    {
+      chunkLoadTimer++;
+    }
+  }
+}
+
+function sortchunks()
+{
+  //furthest away go to the back, to be popped for reuse
+  chunkpool.sort((a,b)=>{ 
+    if(a.vertices.size < 10)
+    {
+      return 1;
+    }
+    let aDistance = Math.sqrt(Math.pow(camera.position.x - a.x, 2) + Math.pow(camera.position.z - a.z, 2));
+    let bDistance = Math.sqrt(Math.pow(camera.position.x-b.x, 2) + Math.pow(camera.position.z-b.z, 2));
+      if(aDistance > bDistance)
+      {
+        return 1;
+      }
+      else if(aDistance < bDistance)
+      {
+        return -1
+      }
+      else{
+        return 0;
+      }
+    })
+}
+
+
+//INITIALIZE CHUNKS FOR WORLD
+for(let i = 0; i < 16; i++)
+{
+  for(let k = 0; k < 16; k++)
+  {
+    let testChunk = new Chunk();
+    testChunk.mesh.frustumCulled = false;
+    chunkpool.push(testChunk);
+    scene.add(testChunk.mesh);
+  }
+}
+
+
+
 
 const gltfLoader = new GLTFLoader(); // Create a loader
 let sun;
@@ -195,7 +420,8 @@ const animate = () => {
       camera.position.y -= 0.2;
     }
 
-
+    updatechunks();
+    runChunkQueue();
     //Render the scene
     renderer.render(scene, camera);
 
