@@ -2,6 +2,7 @@ import "./style.css";
 import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import ImprovedNoise from "./perlin.js";
 
 class InputHandler
 {
@@ -30,7 +31,7 @@ class World
       {
         for(let k = -1000; k < 1000; k++)
         {
-          if(Math.random()*10 < 1) { this.data.set(i+','+j+','+k, Number.parseInt(1)) } 
+          if(ImprovedNoise.noise(j/25, i/25, k/25) > 0.5) { this.data.set(i+','+j+','+k, Number.parseInt(1)) } 
         }
       }
     } 
@@ -40,7 +41,6 @@ class World
 let world = new World();
 world.generate();
 let myInput = new InputHandler();
-
 
 // Canvas
 const canvas = document.querySelector("canvas");
@@ -63,8 +63,8 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);  // Create a basic w
 ambientLight.position.set(0, 0, 0); // Set position of the light
 scene.add(ambientLight); 
 
-const pointLight = new THREE.PointLight(0xffffff, 10); // Create a point light
-pointLight.position.set(-10, 50, 0);
+const pointLight = new THREE.DirectionalLight(0xffffff, 0.5); // Create a point light
+pointLight.position.set(0, 50, 0);
 scene.add(pointLight);
 
 // Controls
@@ -79,13 +79,14 @@ addEventListener(
   false
 )
 
-
 const chunk_height = 20;
 const chunk_width = 16;
 
 // Material
-const meshMaterial = new THREE.MeshLambertMaterial( { color: 0xff0000,
-depthWrite:true } );
+const meshMaterial = new THREE.MeshLambertMaterial( { 
+  color: 0xff0000,
+  depthWrite:true 
+});
 
 class Chunk
 {
@@ -175,13 +176,12 @@ class Chunk
     )
     this.mesh.position.set(this.x*16, 0, this.z*16);
     this.meshGeometry.computeVertexNormals();
+    this.meshGeometry.computeBoundingBox();
+
+    this.meshGeometry.normalizeNormals();
     this.mesh.geometry =this.meshGeometry;
   }
 }
-
-
-
-
 
 let chunkpool = [];
 let mappedChunks = new Map();
@@ -214,7 +214,6 @@ let chunkLoadInterval = 5;
 
 function runChunkQueue()
 {
-
   if(neededChunks.size > 2)
   {
     if(chunkLoadTimer > chunkLoadInterval)
@@ -251,8 +250,6 @@ function runChunkQueue()
           mappedChunks.delete(""+grabbedMesh.x+","+grabbedMesh.z)
         }
         
-
-
         scene.remove(grabbedMesh.mesh);
         grabbedMesh.buildmesh(neededSpot.x, neededSpot.z);
 
@@ -279,20 +276,19 @@ function sortchunks()
     }
     let aDistance = Math.sqrt(Math.pow(camera.position.x - a.x, 2) + Math.pow(camera.position.z - a.z, 2));
     let bDistance = Math.sqrt(Math.pow(camera.position.x-b.x, 2) + Math.pow(camera.position.z-b.z, 2));
-      if(aDistance > bDistance)
-      {
-        return 1;
-      }
-      else if(aDistance < bDistance)
-      {
-        return -1
-      }
-      else{
-        return 0;
-      }
-    })
+    if(aDistance > bDistance)
+    {
+      return 1;
+    }
+    else if(aDistance < bDistance)
+    {
+      return -1
+    }
+    else{
+      return 0;
+    }
+  })
 }
-
 
 //INITIALIZE CHUNKS FOR WORLD
 for(let i = 0; i < 16; i++)
@@ -306,9 +302,6 @@ for(let i = 0; i < 16; i++)
   }
 }
 
-
-
-
 const gltfLoader = new GLTFLoader(); // Create a loader
 let sun;
 
@@ -320,6 +313,7 @@ const loadAsync = url => {
     })
   })
 }
+
 Promise.all( [loadAsync('./sun/scene.gltf'), loadAsync('./jellyfish/scene.gltf')] ).then(models => {
   // get what you need from the models array
   const sun = models[0].scene.children[0]
@@ -328,61 +322,58 @@ Promise.all( [loadAsync('./sun/scene.gltf'), loadAsync('./jellyfish/scene.gltf')
   const jf = models[1].scene.children[0]
     jf.position.set(5, 0, 0);
     jf.scale.set(0.01, 0.01, 0.01);
-
-    console.log("sun", sun);
-  // add both models to the scene
-
   scene.add(sun)
   scene.add(jf)
 })
 
 const onKeyDown = function (event) {
   switch (event.code) {
-      case 'KeyW':
-          myInput.forward = true;
-          break
-      case 'KeyA':
-          myInput.left = true;
-          break
-      case 'KeyS':
-          myInput.back = true;
-          break
-      case 'KeyD':
-          myInput.right = true;
-          break
-      case 'Space':
-          myInput.up = true;
-          break
-      case 'ShiftLeft':
-          myInput.down = true;
-          break
+    case 'KeyW':
+      myInput.forward = true;
+      break
+    case 'KeyA':
+      myInput.left = true;
+      break
+    case 'KeyS':
+      myInput.back = true;
+      break
+    case 'KeyD':
+      myInput.right = true;
+      break
+    case 'Space':
+      myInput.up = true;
+      break
+    case 'ShiftLeft':
+      myInput.down = true;
+      break
   }
 }
 document.addEventListener('keydown', onKeyDown, false)
 
 const onKeyUp = function (event) {
   switch (event.code) {
-      case 'KeyW':
-          myInput.forward = false;
-          break
-      case 'KeyA':
-          myInput.left = false;
-          break
-      case 'KeyS':
-          myInput.back = false;
-          break
-      case 'KeyD':
-          myInput.right = false;
-          break
-      case 'Space':
-          myInput.up = false;
-          break
-      case 'ShiftLeft':
-          myInput.down = false;
-          break
+    case 'KeyW':
+      myInput.forward = false;
+      break
+    case 'KeyA':
+      myInput.left = false;
+      break
+    case 'KeyS':
+      myInput.back = false;
+      break
+    case 'KeyD':
+      myInput.right = false;
+      break
+    case 'Space':
+      myInput.up = false;
+      break
+    case 'ShiftLeft':
+      myInput.down = false;
+      break
   }
 }
 document.addEventListener('keyup', onKeyUp, false)
+
 // Renderer
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas, // Canvas is the canvas element from html
@@ -394,40 +385,38 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Avoid pixelatio
 
 // Animate
 const animate = () => {
-    // // Update the controls
-    if(myInput.forward)
-    {
-      controls.moveForward(0.25);
-    }
-    if(myInput.back)
-    {
-      controls.moveForward(-0.25);
-    }
-    if(myInput.right)
-    {
-      controls.moveRight(0.25);
-    }
-    if(myInput.left)
-    {
-      controls.moveRight(-0.25);
-    }
-    if(myInput.up)
-    {
-      camera.position.y += 0.2;
-    }
-    if(myInput.down)
-    {
-      camera.position.y -= 0.2;
-    }
+  // // Update the controls
+  if(myInput.forward)
+  {
+    controls.moveForward(0.25);
+  }
+  if(myInput.back)
+  {
+    controls.moveForward(-0.25);
+  }
+  if(myInput.right)
+  {
+    controls.moveRight(0.25);
+  }
+  if(myInput.left)
+  {
+    controls.moveRight(-0.25);
+  }
+  if(myInput.up)
+  {
+    camera.position.y += 0.2;
+  }
+  if(myInput.down)
+  {
+    camera.position.y -= 0.2;
+  }
 
-    updatechunks();
-    runChunkQueue();
-    //Render the scene
-    renderer.render(scene, camera);
+  updatechunks();
+  runChunkQueue();
+  //Render the scene
+  renderer.render(scene, camera);
 
-    //Calls itself next frame, to repeat
-    window.requestAnimationFrame(animate);
+  //Calls itself next frame, to repeat
+  window.requestAnimationFrame(animate);
 };
-
 animate();
-
