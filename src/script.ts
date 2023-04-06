@@ -252,7 +252,7 @@ function updatechunks()
 }
 
 let chunkLoadTimer = 0;
-let chunkLoadInterval = 1;
+let chunkLoadInterval = 5;
 
 let chunkSortTimer = 0;
 let chunkSortInterval = 8;
