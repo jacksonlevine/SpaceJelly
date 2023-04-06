@@ -1,7 +1,6 @@
 import "./style.css";
 import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import ImprovedNoise from "./perlin.js";
 
 class InputHandler
@@ -243,16 +242,14 @@ function runChunkQueue()
       }
       //else
       {
-      sortchunks();
-      let grabbedMesh = chunkpool.pop();
+        sortchunks();
+        let grabbedMesh = chunkpool.pop();
         if(mappedChunks.has(""+grabbedMesh.x+","+grabbedMesh.z))
         {
           mappedChunks.delete(""+grabbedMesh.x+","+grabbedMesh.z)
         }
-        
         scene.remove(grabbedMesh.mesh);
         grabbedMesh.buildmesh(neededSpot.x, neededSpot.z);
-
         scene.add(grabbedMesh.mesh);
         chunkpool.unshift(grabbedMesh);
         mappedChunks.set(""+neededSpot.x+","+neededSpot.z, true);
@@ -301,30 +298,6 @@ for(let i = 0; i < 16; i++)
     scene.add(testChunk.mesh);
   }
 }
-
-const gltfLoader = new GLTFLoader(); // Create a loader
-let sun;
-
-// make async loader
-const loadAsync = url => {
-  return new Promise(resolve => {
-    gltfLoader.load(url, gltf => {
-      resolve(gltf)
-    })
-  })
-}
-
-Promise.all( [loadAsync('./sun/scene.gltf'), loadAsync('./jellyfish/scene.gltf')] ).then(models => {
-  // get what you need from the models array
-  const sun = models[0].scene.children[0]
-    sun.position.set(-15, 0, 0);
-    sun.scale.set(0.1, 0.1, 0.1);
-  const jf = models[1].scene.children[0]
-    jf.position.set(5, 0, 0);
-    jf.scale.set(0.01, 0.01, 0.01);
-  scene.add(sun)
-  scene.add(jf)
-})
 
 const onKeyDown = function (event) {
   switch (event.code) {
