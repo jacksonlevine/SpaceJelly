@@ -38,6 +38,13 @@ module.exports = {
                 ]
             },
 
+            // TS
+            {
+                test: /\.ts?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+            },
+
             // JS
             {
                 test: /\.js$/,

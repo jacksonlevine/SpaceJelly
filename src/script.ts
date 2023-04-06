@@ -3,16 +3,16 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
 import ImprovedNoise from "./perlin.js";
 
-type uint8 = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 | 58 | 59 | 60 | 61 | 62 | 63 | 64 | 65 | 66 | 67 | 68 | 69 | 70 | 71 | 72 | 73 | 74 | 75 | 76 | 77 | 78 | 79 | 80 | 81 | 82 | 83 | 84 | 85 | 86 | 87 | 88 | 89 | 90 | 91 | 92 | 93 | 94 | 95 | 96 | 97 | 98 | 99 | 100 | 101 | 102 | 103 | 104 | 105 | 106 | 107 | 108 | 109 | 110 | 111 | 112 | 113 | 114 | 115 | 116 | 117 | 118 | 119 | 120 | 121 | 122 | 123 | 124 | 125 | 126 | 127 | 128 | 129 | 130 | 131 | 132 | 133 | 134 | 135 | 136 | 137 | 138 | 139 | 140 | 141 | 142 | 143 | 144 | 145 | 146 | 147 | 148 | 149 | 150 | 151 | 152 | 153 | 154 | 155 | 156 | 157 | 158 | 159 | 160 | 161 | 162 | 163 | 164 | 165 | 166 | 167 | 168 | 169 | 170 | 171 | 172 | 173 | 174 | 175 | 176 | 177 | 178 | 179 | 180 | 181 | 182 | 183 | 184 | 185 | 186 | 187 | 188 | 189 | 190 | 191 | 192 | 193 | 194 | 195 | 196 | 197 | 198 | 199 | 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 209 | 210 | 211 | 212 | 213 | 214 | 215 | 216 | 217 | 218 | 219 | 220 | 221 | 222 | 223 | 224 | 225 | 226 | 227 | 228 | 229 | 230 | 231 | 232 | 233 | 234 | 235 | 236 | 237 | 238 | 239 | 240 | 241 | 242 | 243 | 244 | 245 | 246 | 247 | 248 | 249 | 250 | 251 | 252 | 253 | 254;
+const TimeStartedProgram = new Date();
 
 enum InputState
 {
-  left,
-  right,
-  back,
-  forward,
-  up,
-  down
+  left = 0,
+  right = 1 << 0,
+  back = 1 << 1,
+  forward = 1 << 2,
+  up = 1 << 3,
+  down = 1 << 4
 }
 
 class InputHandler
@@ -26,7 +26,7 @@ class InputHandler
 
 class World
 {
-  data: Map<string, uint8>
+  data: Map<string, Uint8Array>
   constructor()
   {
     this.data = new Map();
@@ -39,7 +39,7 @@ class World
       {
         for(let k = -500; k < 500; k++)
         {
-          if(ImprovedNoise.noise(j/25, i/25, k/25) > 0.2) { this.data.set(i+','+j+','+k, 1) } 
+          if(ImprovedNoise.noise(j/25, i/25, k/25) > 0.2) { this.data.set(i+','+j+','+k, new Uint8Array(1)) } 
         }
       }
     } 
@@ -54,9 +54,11 @@ let input = new InputHandler();
 // Canvas
 const canvas: HTMLElement | null = document.querySelector("canvas");
 
+const backfogcolor: THREE.ColorRepresentation = 0xcccccc
+
 // Scene
 const scene = new THREE.Scene();
-
+scene.fog = new THREE.Fog(backfogcolor, 10, 200 );
 // Camera
 const camera = new THREE.PerspectiveCamera(
   75, // FOV - Field of view
@@ -117,6 +119,7 @@ class Chunk
     this.x = newx;
     this.z = newz;
     let newVerts = new Array<number>();
+    let newNorms = new Array<number>();
     for(let j = 0; j < chunk_height; j++)
     {
       for(let i = 0; i < chunk_width; i++)
@@ -133,6 +136,10 @@ class Chunk
               newVerts.push(i, j+1, k+1);
               newVerts.push(i, j+1, k);
               newVerts.push(i, j, k);
+              for(let h = 0; h < 6; h++)
+              {
+                newNorms.push(-1, 0, 0);
+              }
             }
             if(!world.data.has(""+((this.x*16)+i)+","+(j)+","+((this.z*16)+k-1)))
             {
@@ -142,6 +149,10 @@ class Chunk
               newVerts.push(i+1, j+1, k);
               newVerts.push(i+1, j, k);
               newVerts.push(i, j, k);
+              for(let h = 0; h < 6; h++)
+              {
+                newNorms.push(0, 0, -1);
+              }
             }
             if(!world.data.has(""+((this.x*16)+i+1)+","+(j)+","+((this.z*16)+k)))
             {
@@ -151,6 +162,10 @@ class Chunk
               newVerts.push(i+1, j+1, k+1);
               newVerts.push(i+1, j, k+1);
               newVerts.push(i+1, j, k);
+              for(let h = 0; h < 6; h++)
+              {
+                newNorms.push(1, 0, 0);
+              }
             }
             if(!world.data.has(""+((this.x*16)+i)+","+(j)+","+((this.z*16)+k+1)))
             {
@@ -160,6 +175,10 @@ class Chunk
               newVerts.push(i+1, j+1, k+1);
               newVerts.push(i, j+1, k+1);
               newVerts.push(i, j, k+1);
+              for(let h = 0; h < 6; h++)
+              {
+                newNorms.push(0, 0, 1);
+              }
             }
             if(!world.data.has(""+((this.x*16)+i)+","+(j-1)+","+((this.z*16)+k)))
             {
@@ -169,6 +188,10 @@ class Chunk
               newVerts.push(i+1, j, k+1);
               newVerts.push(i, j, k+1);
               newVerts.push(i, j, k);
+              for(let h = 0; h < 6; h++)
+              {
+                newNorms.push(0, -1, 0);
+              }
             }
             if(!world.data.has(""+((this.x*16)+i)+","+(j+1)+","+((this.z*16)+k)))
             {
@@ -178,6 +201,10 @@ class Chunk
               newVerts.push(i+1, j+1, k+1);
               newVerts.push(i+1, j+1, k);
               newVerts.push(i, j+1, k);
+              for(let h = 0; h < 6; h++)
+              {
+                newNorms.push(0, 1, 0);
+              }
             }
           }
         }
@@ -188,11 +215,12 @@ class Chunk
       "position", 
       new THREE.BufferAttribute(this.vertices, 3) 
     )
+    this.meshGeometry.setAttribute(
+      "normal", 
+      new THREE.BufferAttribute(new Float32Array(newNorms), 3) 
+    )
     this.mesh.position.set(this.x*16, 0, this.z*16);
-    this.meshGeometry.computeVertexNormals();
-    this.meshGeometry.computeBoundingBox();
 
-    this.meshGeometry.normalizeNormals();
     this.mesh.geometry =this.meshGeometry;
   }
 }
@@ -204,12 +232,12 @@ let neededChunks = new Map();
 function updatechunks()
 {
 
-  for(let i = -6; i < 6; i++)
+  for(let i = -chunk_width*12; i < chunk_width*12; i+=16)
   {
-    for(let k = -6; k < 6; k++)
+    for(let k = -chunk_width*12; k < chunk_width*12; k+=16)
     {
-      let x = i+Math.round(camera.position.x/16);
-      let z = k+Math.round(camera.position.z/16);
+      let x = Math.round((i+camera.position.x)/16);
+      let z = Math.round((k+camera.position.z)/16);
 
       if(!mappedChunks.has(""+x+","+z))
       {
@@ -224,13 +252,16 @@ function updatechunks()
 }
 
 let chunkLoadTimer = 0;
-let chunkLoadInterval = 5;
+let chunkLoadInterval = 1;
+
+let chunkSortTimer = 0;
+let chunkSortInterval = 8;
 
 function runChunkQueue()
 {
   if(neededChunks.size > 2)
   {
-    if(chunkLoadTimer > chunkLoadInterval)
+    if(chunkLoadTimer > chunkLoadInterval || (new Date().getSeconds() - TimeStartedProgram.getSeconds()) < 10)
     {
       chunkLoadTimer = 0;
       const needed = Array.from(neededChunks.values());
@@ -249,29 +280,26 @@ function runChunkQueue()
             return 0;
           }  })
       const neededSpot = needed[0];
-      if(Math.sqrt(Math.pow(camera.position.x-neededSpot.x, 2) + Math.pow(camera.position.z - neededSpot.z, 2)) > chunk_width*7)
-      {
-        //throw this one out
-        //console.log("threw one out");
-        neededChunks.delete(""+neededSpot.x+","+neededSpot.z)
-      }
-      else
-      {
+      if(chunkSortTimer >= chunkSortInterval) {
         sortchunks();
-        let grabbedMesh = chunkpool.pop();
-        if(grabbedMesh != null)
+      }
+      else{
+        chunkSortTimer++;
+      }
+
+      let grabbedMesh = chunkpool.pop();
+      if(grabbedMesh != null)
+      {
+        if(mappedChunks.has(""+(<Chunk>grabbedMesh).x+","+(<Chunk>grabbedMesh).z))
         {
-          if(mappedChunks.has(""+(<Chunk>grabbedMesh).x+","+(<Chunk>grabbedMesh).z))
-          {
-            mappedChunks.delete(""+(<Chunk>grabbedMesh).x+","+(<Chunk>grabbedMesh).z)
-          }
-          scene.remove((<Chunk>grabbedMesh).mesh);
-          (<Chunk>grabbedMesh).buildmesh(neededSpot.x, neededSpot.z);
-          scene.add((<Chunk>grabbedMesh).mesh);
-          chunkpool.unshift(grabbedMesh);
-          mappedChunks.set(""+neededSpot.x+","+neededSpot.z, true);
-          neededChunks.delete(""+neededSpot.x+","+neededSpot.z)
+          mappedChunks.delete(""+(<Chunk>grabbedMesh).x+","+(<Chunk>grabbedMesh).z)
         }
+        scene.remove((<Chunk>grabbedMesh).mesh);
+        (<Chunk>grabbedMesh).buildmesh(neededSpot.x, neededSpot.z);
+        scene.add((<Chunk>grabbedMesh).mesh);
+        chunkpool.unshift(grabbedMesh);
+        mappedChunks.set(""+neededSpot.x+","+neededSpot.z, true);
+        neededChunks.delete(""+neededSpot.x+","+neededSpot.z)
       }
     }
     else
@@ -306,9 +334,9 @@ function sortchunks()
 }
 
 //INITIALIZE CHUNKS FOR WORLD
-for(let i = 0; i < 16; i++)
+for(let i = 0; i < 32; i++)
 {
-  for(let k = 0; k < 16; k++)
+  for(let k = 0; k < 32; k++)
   {
     let testChunk = new Chunk();
     testChunk.mesh.frustumCulled = false;
@@ -370,7 +398,7 @@ const renderer = new THREE.WebGLRenderer({
   canvas: <HTMLCanvasElement | OffscreenCanvas | undefined>canvas, // Canvas is the canvas element from html
   alpha: true
 });
-
+renderer.setClearColor(backfogcolor, 1);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Avoid pixelation on high res screens
 
