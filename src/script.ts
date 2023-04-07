@@ -3,16 +3,17 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
 import ImprovedNoise from "./perlin.js";
 
-const TimeStartedProgram = new Date();
+let start = new Date();
+const TimeStartedProgram: number = start.getUTCSeconds();
 
 enum InputState
 {
-  left = 0,
-  right = 1 << 0,
-  back = 1 << 1,
-  forward = 1 << 2,
-  up = 1 << 3,
-  down = 1 << 4
+  left = 1 << 0,
+  right = 1 << 1,
+  back = 1 << 2,
+  forward = 1 << 3,
+  up = 1 << 4,
+  down = 1 << 5
 }
 
 class InputHandler
@@ -67,6 +68,9 @@ const camera = new THREE.PerspectiveCamera(
   100000 // Far clipping distance limit
 );
 camera.position.z = 3; // Pull the camera back a bit so you can see the object
+
+let cameraPrevX = camera.position.x;
+let cameraPrevY = camera.position.y;
 scene.add(camera);
 
 // Lights
@@ -231,20 +235,25 @@ let neededChunks = new Map();
 
 function updatechunks()
 {
-
-  for(let i = -chunk_width*12; i < chunk_width*12; i+=16)
+  let shouldDo: boolean = (camera.position.y != cameraPrevY || camera.position.x != cameraPrevX || new Date().getUTCSeconds() - TimeStartedProgram < 10);
+  if(shouldDo)
   {
-    for(let k = -chunk_width*12; k < chunk_width*12; k+=16)
+    cameraPrevX = camera.position.x;
+    cameraPrevY = camera.position.y;
+    for(let i = -chunk_width*12; i < chunk_width*12; i+=16)
     {
-      let x = Math.round((i+camera.position.x)/16);
-      let z = Math.round((k+camera.position.z)/16);
-
-      if(!mappedChunks.has(""+x+","+z))
+      for(let k = -chunk_width*12; k < chunk_width*12; k+=16)
       {
-        let obj = { x: x, z: z }
-        if(!neededChunks.has(""+x+","+z)) // if it needs to tell neededchunks it needs this
+        let x = Math.round((i+camera.position.x)/16);
+        let z = Math.round((k+camera.position.z)/16);
+
+        if(!mappedChunks.has(""+x+","+z))
         {
-          neededChunks.set(""+x+","+z, obj);
+          let obj = { x: x, z: z }
+          if(!neededChunks.has(""+x+","+z)) // if it needs to tell neededchunks it needs this
+          {
+            neededChunks.set(""+x+","+z, obj);
+          }
         }
       }
     }
@@ -261,7 +270,7 @@ function runChunkQueue()
 {
   if(neededChunks.size > 2)
   {
-    if(chunkLoadTimer > chunkLoadInterval || (new Date().getSeconds() - TimeStartedProgram.getSeconds()) < 10)
+    if(chunkLoadTimer > chunkLoadInterval || (new Date().getUTCSeconds() - TimeStartedProgram) < 10)
     {
       chunkLoadTimer = 0;
       const needed = Array.from(neededChunks.values());
