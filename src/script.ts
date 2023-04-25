@@ -34,13 +34,13 @@ class World
   }
   generate()
   {
-    for(let j = 0; j < 30; j++)
+    for(let j = 0; j < 100; j++)
     {
       for(let i = -250; i < 250; i++)
       {
-        for(let k = -250; k < 250; k++)
+        for(let k = -500; k < 250; k++)
         {
-          if(ImprovedNoise.noise(j/25, i/25, k/25) > 0.2) { this.data.set(i+','+j+','+k, '1') } 
+          if(ImprovedNoise.noise(i/25, 8.425, k/25)*10 >j) { this.data.set(i+','+j+','+k, '1') } 
         }
       }
     } 
@@ -235,13 +235,15 @@ class Chunk
 let chunkpool = [];
 let mappedChunks = new Map();
 let neededChunks = new Map();
+let secondNeededChunks = new Map();
 
 function updatechunks()
 {
-  let shouldDo: true;
+  //console.log(neededChunks);
+  let shouldDo = true;
   if(shouldDo)
   {
-    for(let y = -chunk_width*8; y < chunk_width*8; y+=16)
+    for(let y = -chunk_width*2; y < chunk_width*2; y+=16)
     {
       for(let i = -chunk_width*8; i < chunk_width*8; i+=16)
       {
@@ -251,13 +253,20 @@ function updatechunks()
           let z = Math.round((k+camera.position.z)/16);
           let yy = Math.round((y+camera.position.y)/16);
 
-          if(!mappedChunks.has(""+x+","+y+","+z))
+          if(!mappedChunks.has(""+x+","+yy+","+z))
           {
-            let obj = { x: x, z: z, y: yy }
-            if(!neededChunks.has(""+x+","+y+","+z)) // if it needs to tell neededchunks it needs this
+            let obj = { x: x, y: yy , z: z }
+            if(Math.abs(k) < chunk_width*2 && Math.abs(i) < chunk_width*2 ) {
+            if(!neededChunks.has(""+x+","+yy+","+z)) // if it needs to tell neededchunks it needs this
             {
-              neededChunks.set(""+x+","+y+","+z, obj);
+              neededChunks.set(""+x+","+yy+","+z, obj);
             }
+          } else {
+            if(!secondNeededChunks.has(""+x+","+yy+","+z)) // if it needs to tell neededchunks it needs this
+            {
+              secondNeededChunks.set(""+x+","+yy+","+z, obj);
+            }
+          }
           }
         }
       }
@@ -265,20 +274,33 @@ function updatechunks()
   }
 }
 
+interface NeededChunk
+{
+  x: number;
+  y: number;
+  z: number;
+}
+
 let chunkLoadTimer = 0;
-let chunkLoadInterval = 5;
+let chunkLoadInterval = 1;
 
 let chunkSortTimer = 0;
 let chunkSortInterval = 8;
 
 function runChunkQueue()
 {
-  if(neededChunks.size > 6)
+  let needChunks
+  if(neededChunks.size < 16)
   {
-    if(chunkLoadTimer > chunkLoadInterval || (new Date().getUTCSeconds() - TimeStartedProgram) < 10)
+    needChunks = secondNeededChunks;
+  } else 
+  {
+    needChunks = neededChunks;
+  }
+    if(chunkLoadTimer > chunkLoadInterval)
     {
       chunkLoadTimer = 0;
-      const needed = Array.from(neededChunks.values());
+      const needed = Array.from(needChunks.values());
       /*needed.sort((a,b)=>{  
         let aDistance = Math.sqrt(Math.pow(a.x - camera.position.x, 2) + Math.pow(a.z - camera.position.z, 2));
         let bDistance = Math.sqrt(Math.pow(b.x - camera.position.x, 2) + Math.pow(b.z -camera.position.z, 2));
@@ -293,7 +315,7 @@ function runChunkQueue()
           else{
             return 0;
           }  })*/
-      const neededSpot = needed[0];
+      const neededSpot: NeededChunk = <NeededChunk>needed[0];
       /*if(chunkSortTimer >= chunkSortInterval) {
         sortchunks();
       }
@@ -320,7 +342,7 @@ function runChunkQueue()
     {
       chunkLoadTimer++;
     }
-  }
+  
 }
 
 /*function sortchunks()
@@ -348,9 +370,9 @@ function runChunkQueue()
 }*/
 
 //INITIALIZE CHUNKS FOR WORLD
-for(let i = 0; i < 32; i++)
+for(let i = 0; i < 16; i++)
 {
-  for(let k = 0; k < 32; k++)
+  for(let k = 0; k < 16; k++)
   {
     let testChunk = new Chunk();
     testChunk.mesh.frustumCulled = false;
