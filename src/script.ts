@@ -6,6 +6,9 @@ import ImprovedNoise from "./perlin.js";
 let start = new Date();
 const TimeStartedProgram: number = start.getUTCSeconds();
 
+let chunk_width = 16;
+let chunk_height = chunk_width;
+
 enum InputState
 {
   left = 1 << 0,
@@ -28,22 +31,65 @@ class InputHandler
 class World
 {
   data: Map<string, string>
+  hasblockmarks: Map<string, string>
   constructor()
   {
     this.data = new Map();
+    this.hasblockmarks = new Map();
   }
-  generate()
+  generate = () =>
   {
-    for(let j = 0; j < 100; j++)
+    let REAL_WORLD_X: number;
+    let REAL_WORLD_Y;
+    let REAL_WORLD_Z;
+
+
+    for(let j = -2; j < 2; j++)
     {
-      for(let i = -250; i < 250; i++)
+      for(let i = -20; i < 20; i++)
       {
-        for(let k = -500; k < 250; k++)
+        for(let k = -20; k < 20; k++)
         {
-          if(ImprovedNoise.noise(i/25, 8.425, k/25)*10 >j) { this.data.set(i+','+j+','+k, '1') } 
+          //let blockCount = 0;
+
+
+            for(var o = 0; o < chunk_width; o++)
+          {
+
+            for(var o2 = 0; o2 < chunk_width; o2++)
+            {
+              for(var o3 = 0; o3 < chunk_width; o3++)
+              {
+
+                REAL_WORLD_X = (i*chunk_width )+ o;
+                REAL_WORLD_Z = (k*chunk_width) + o3;
+                REAL_WORLD_Y = (j*chunk_width) + o2;
+
+                let n = ImprovedNoise.noise(REAL_WORLD_X/25.340, 34.425, REAL_WORLD_Z/25.65)*15;
+
+                if((REAL_WORLD_Y < n)) { 
+                  //blockCount++;
+
+                  if(!(this.hasblockmarks.has(""+i+","+j+","+k)))
+                  {
+                    
+                    this.hasblockmarks.set(""+i+","+j+","+k, "1") //Chunk level (zoomed out)
+                  }
+                  // if(blockCount >= chunk_width*chunk_width*chunk_width)
+                  // {
+                  //   this.hasblockmarks.delete(""+i+","+j+","+k); // Remove it if its full for now
+                  // }
+                  this.data.set(""+REAL_WORLD_X+','+REAL_WORLD_Y+','+REAL_WORLD_Z, '1') // Real world level (micro)
+                }
+              }
+            }
+          }
+
+
         }
       }
     } 
+    console.log("Done generating world.")
   }
 }
 
@@ -94,8 +140,8 @@ addEventListener(
   false
 )
 
-const chunk_height = 30;
-const chunk_width = 16;
+
+
 
 // Material
 const meshMaterial = new THREE.MeshLambertMaterial( { 
@@ -127,7 +173,7 @@ class Chunk
     this.y = newy;
     let newVerts = new Array<number>();
     let newNorms = new Array<number>();
-    for(let j = 0; j < chunk_height; j++)
+    for(let j = 0; j < chunk_width; j++)
     {
       for(let i = 0; i < chunk_width; i++)
       {
@@ -235,15 +281,16 @@ class Chunk
 let chunkpool = [];
 let mappedChunks = new Map();
 let neededChunks = new Map();
-let secondNeededChunks = new Map();
+
+
+let mapTimer = 0;
+let mapInterval = 10;
 
 function updatechunks()
 {
   //console.log(neededChunks);
-  let shouldDo = true;
-  if(shouldDo)
-  {
-    for(let y = -chunk_width*2; y < chunk_width*2; y+=16)
+
+    for(let y = -chunk_width*2; y < chunk_width*8; y+=16)
     {
       for(let i = -chunk_width*8; i < chunk_width*8; i+=16)
       {
@@ -253,54 +300,34 @@ function updatechunks()
           let z = Math.round((k+camera.position.z)/16);
           let yy = Math.round((y+camera.position.y)/16);
 
-          if(!mappedChunks.has(""+x+","+yy+","+z))
+          if(world.hasblockmarks.has(""+x+","+yy+","+z) && !mappedChunks.has(""+x+","+yy+","+z))
           {
             let obj = { x: x, y: yy , z: z }
-            if(Math.abs(k) < chunk_width*2 && Math.abs(i) < chunk_width*2 ) {
+       
             if(!neededChunks.has(""+x+","+yy+","+z)) // if it needs to tell neededchunks it needs this
             {
               neededChunks.set(""+x+","+yy+","+z, obj);
             }
-          } else {
-            if(!secondNeededChunks.has(""+x+","+yy+","+z)) // if it needs to tell neededchunks it needs this
-            {
-              secondNeededChunks.set(""+x+","+yy+","+z, obj);
-            }
-          }
+
           }
         }
       }
     }
-  }
 }
 
-interface NeededChunk
-{
-  x: number;
-  y: number;
-  z: number;
-}
 
 let chunkLoadTimer = 0;
-let chunkLoadInterval = 1;
+let chunkLoadInterval = 0;
 
 let chunkSortTimer = 0;
 let chunkSortInterval = 8;
 
 function runChunkQueue()
 {
-  let needChunks
-  if(neededChunks.size < 16)
-  {
-    needChunks = secondNeededChunks;
-  } else 
-  {
-    needChunks = neededChunks;
-  }
-    if(chunkLoadTimer > chunkLoadInterval)
+    if(chunkLoadTimer > chunkLoadInterval && neededChunks.size != 0)
     {
       chunkLoadTimer = 0;
-      const needed = Array.from(needChunks.values());
+      const needed = Array.from(neededChunks.values());
       /*needed.sort((a,b)=>{  
         let aDistance = Math.sqrt(Math.pow(a.x - camera.position.x, 2) + Math.pow(a.z - camera.position.z, 2));
         let bDistance = Math.sqrt(Math.pow(b.x - camera.position.x, 2) + Math.pow(b.z -camera.position.z, 2));
@@ -315,7 +342,7 @@ function runChunkQueue()
           else{
             return 0;
           }  })*/
-      const neededSpot: NeededChunk = <NeededChunk>needed[0];
+      const neededSpot= needed[0];
       /*if(chunkSortTimer >= chunkSortInterval) {
         sortchunks();
       }
@@ -374,10 +401,14 @@ for(let i = 0; i < 16; i++)
 {
   for(let k = 0; k < 16; k++)
   {
-    let testChunk = new Chunk();
-    testChunk.mesh.frustumCulled = false;
-    (<Array<Chunk>>chunkpool).push(testChunk);
-    scene.add(testChunk.mesh);
+    for(let a = 0; a < 16; a++) {
+
+    
+      let testChunk = new Chunk();
+      testChunk.mesh.frustumCulled = false;
+      (<Array<Chunk>>chunkpool).push(testChunk);
+      scene.add(testChunk.mesh);
+    }
   }
 }
 
@@ -465,8 +496,10 @@ const animate = () => {
   {
     camera.position.y -= 0.2;
   }
+  
+    updatechunks();
+  
 
-  updatechunks();
   runChunkQueue();
   //Render the scene
   renderer.render(scene, camera);
