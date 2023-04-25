@@ -27,20 +27,20 @@ class InputHandler
 
 class World
 {
-  data: Map<string, Uint8Array>
+  data: Map<string, string>
   constructor()
   {
     this.data = new Map();
   }
   generate()
   {
-    for(let j = 0; j < 20; j++)
+    for(let j = 0; j < 30; j++)
     {
-      for(let i = -500; i < 500; i++)
+      for(let i = -250; i < 250; i++)
       {
-        for(let k = -500; k < 500; k++)
+        for(let k = -250; k < 250; k++)
         {
-          if(ImprovedNoise.noise(j/25, i/25, k/25) > 0.2) { this.data.set(i+','+j+','+k, new Uint8Array(1)) } 
+          if(ImprovedNoise.noise(j/25, i/25, k/25) > 0.2) { this.data.set(i+','+j+','+k, '1') } 
         }
       }
     } 
@@ -94,7 +94,7 @@ addEventListener(
   false
 )
 
-const chunk_height = 20;
+const chunk_height = 30;
 const chunk_width = 16;
 
 // Material
@@ -110,6 +110,7 @@ class Chunk
   mesh: THREE.Mesh;
   x: number;
   z: number;
+  y: number;
   constructor()
   {
     this.meshGeometry = new THREE.BufferGeometry();
@@ -117,11 +118,13 @@ class Chunk
     this.mesh = new THREE.Mesh(this.meshGeometry, meshMaterial );
     this.x = 0; //multiply x and z by 16 to get real-world position
     this.z = 0; 
+    this.y = 0;
   }
-  buildmesh(newx, newz)
+  buildmesh(newx, newy, newz)
   {
     this.x = newx;
     this.z = newz;
+    this.y = newy;
     let newVerts = new Array<number>();
     let newNorms = new Array<number>();
     for(let j = 0; j < chunk_height; j++)
@@ -130,9 +133,9 @@ class Chunk
       {
         for(let k = 0; k < chunk_width; k++)
         {
-          if(world.data.has(""+((this.x*16)+i)+","+(j)+","+((this.z*16)+k)))
+          if(world.data.has(""+((this.x*16)+i)+","+((this.y*16)+j)+","+((this.z*16)+k)))
           {
-            if(!world.data.has(""+((this.x*16)+i-1)+","+(j)+","+((this.z*16)+k)))
+            if(!world.data.has(""+((this.x*16)+i-1)+","+((this.y*16)+j)+","+((this.z*16)+k)))
             {
               newVerts.push(i, j, k);
               newVerts.push(i, j, k+1);
@@ -145,7 +148,7 @@ class Chunk
                 newNorms.push(-1, 0, 0);
               }
             }
-            if(!world.data.has(""+((this.x*16)+i)+","+(j)+","+((this.z*16)+k-1)))
+            if(!world.data.has(""+((this.x*16)+i)+","+((this.y*16)+j)+","+((this.z*16)+k-1)))
             {
               newVerts.push(i, j, k);
               newVerts.push(i, j+1, k);
@@ -158,7 +161,7 @@ class Chunk
                 newNorms.push(0, 0, -1);
               }
             }
-            if(!world.data.has(""+((this.x*16)+i+1)+","+(j)+","+((this.z*16)+k)))
+            if(!world.data.has(""+((this.x*16)+i+1)+","+((this.y*16)+j)+","+((this.z*16)+k)))
             {
               newVerts.push(i+1, j, k);
               newVerts.push(i+1, j+1, k);
@@ -171,7 +174,7 @@ class Chunk
                 newNorms.push(1, 0, 0);
               }
             }
-            if(!world.data.has(""+((this.x*16)+i)+","+(j)+","+((this.z*16)+k+1)))
+            if(!world.data.has(""+((this.x*16)+i)+","+((this.y*16)+j)+","+((this.z*16)+k+1)))
             {
               newVerts.push(i, j, k+1);
               newVerts.push(i+1, j, k+1);
@@ -184,7 +187,7 @@ class Chunk
                 newNorms.push(0, 0, 1);
               }
             }
-            if(!world.data.has(""+((this.x*16)+i)+","+(j-1)+","+((this.z*16)+k)))
+            if(!world.data.has(""+((this.x*16)+i)+","+((this.y*16)+j-1)+","+((this.z*16)+k)))
             {
               newVerts.push(i, j, k);
               newVerts.push(i+1, j, k);
@@ -197,7 +200,7 @@ class Chunk
                 newNorms.push(0, -1, 0);
               }
             }
-            if(!world.data.has(""+((this.x*16)+i)+","+(j+1)+","+((this.z*16)+k)))
+            if(!world.data.has(""+((this.x*16)+i)+","+((this.y*16)+j+1)+","+((this.z*16)+k)))
             {
               newVerts.push(i, j+1, k);
               newVerts.push(i, j+1, k+1);
@@ -223,9 +226,9 @@ class Chunk
       "normal", 
       new THREE.BufferAttribute(new Float32Array(newNorms), 3) 
     )
-    this.mesh.position.set(this.x*16, 0, this.z*16);
+    this.mesh.position.set(this.x*16, this.y*16, this.z*16);
 
-    this.mesh.geometry =this.meshGeometry;
+    this.mesh.geometry = this.meshGeometry;
   }
 }
 
@@ -235,24 +238,26 @@ let neededChunks = new Map();
 
 function updatechunks()
 {
-  let shouldDo: boolean = (camera.position.y != cameraPrevY || camera.position.x != cameraPrevX || new Date().getUTCSeconds() - TimeStartedProgram < 10);
+  let shouldDo: true;
   if(shouldDo)
   {
-    cameraPrevX = camera.position.x;
-    cameraPrevY = camera.position.y;
-    for(let i = -chunk_width*12; i < chunk_width*12; i+=16)
+    for(let y = -chunk_width*8; y < chunk_width*8; y+=16)
     {
-      for(let k = -chunk_width*12; k < chunk_width*12; k+=16)
+      for(let i = -chunk_width*8; i < chunk_width*8; i+=16)
       {
-        let x = Math.round((i+camera.position.x)/16);
-        let z = Math.round((k+camera.position.z)/16);
-
-        if(!mappedChunks.has(""+x+","+z))
+        for(let k = -chunk_width*8; k < chunk_width*8; k+=16)
         {
-          let obj = { x: x, z: z }
-          if(!neededChunks.has(""+x+","+z)) // if it needs to tell neededchunks it needs this
+          let x = Math.round((i+camera.position.x)/16);
+          let z = Math.round((k+camera.position.z)/16);
+          let yy = Math.round((y+camera.position.y)/16);
+
+          if(!mappedChunks.has(""+x+","+y+","+z))
           {
-            neededChunks.set(""+x+","+z, obj);
+            let obj = { x: x, z: z, y: yy }
+            if(!neededChunks.has(""+x+","+y+","+z)) // if it needs to tell neededchunks it needs this
+            {
+              neededChunks.set(""+x+","+y+","+z, obj);
+            }
           }
         }
       }
@@ -268,13 +273,13 @@ let chunkSortInterval = 8;
 
 function runChunkQueue()
 {
-  if(neededChunks.size > 2)
+  if(neededChunks.size > 6)
   {
     if(chunkLoadTimer > chunkLoadInterval || (new Date().getUTCSeconds() - TimeStartedProgram) < 10)
     {
       chunkLoadTimer = 0;
       const needed = Array.from(neededChunks.values());
-      needed.sort((a,b)=>{  
+      /*needed.sort((a,b)=>{  
         let aDistance = Math.sqrt(Math.pow(a.x - camera.position.x, 2) + Math.pow(a.z - camera.position.z, 2));
         let bDistance = Math.sqrt(Math.pow(b.x - camera.position.x, 2) + Math.pow(b.z -camera.position.z, 2));
           if(aDistance > bDistance)
@@ -283,32 +288,32 @@ function runChunkQueue()
           }
           else if(aDistance < bDistance)
           {
-            return -1
+            return -1s
           }
           else{
             return 0;
-          }  })
+          }  })*/
       const neededSpot = needed[0];
-      if(chunkSortTimer >= chunkSortInterval) {
+      /*if(chunkSortTimer >= chunkSortInterval) {
         sortchunks();
       }
       else{
         chunkSortTimer++;
-      }
+      }*/
 
       let grabbedMesh = chunkpool.pop();
       if(grabbedMesh != null)
       {
-        if(mappedChunks.has(""+(<Chunk>grabbedMesh).x+","+(<Chunk>grabbedMesh).z))
+        if(mappedChunks.has(""+(<Chunk>grabbedMesh).x+","+(<Chunk>grabbedMesh).y+","+(<Chunk>grabbedMesh).z))
         {
-          mappedChunks.delete(""+(<Chunk>grabbedMesh).x+","+(<Chunk>grabbedMesh).z)
+          mappedChunks.delete(""+(<Chunk>grabbedMesh).x+","+(<Chunk>grabbedMesh).y+","+(<Chunk>grabbedMesh).z)
         }
         scene.remove((<Chunk>grabbedMesh).mesh);
-        (<Chunk>grabbedMesh).buildmesh(neededSpot.x, neededSpot.z);
+        (<Chunk>grabbedMesh).buildmesh(neededSpot.x, neededSpot.y, neededSpot.z);
         scene.add((<Chunk>grabbedMesh).mesh);
         chunkpool.unshift(grabbedMesh);
-        mappedChunks.set(""+neededSpot.x+","+neededSpot.z, true);
-        neededChunks.delete(""+neededSpot.x+","+neededSpot.z)
+        mappedChunks.set(""+neededSpot.x+","+neededSpot.y+","+neededSpot.z, true);
+        neededChunks.delete(""+neededSpot.x+","+neededSpot.y+","+neededSpot.z)
       }
     }
     else
@@ -318,7 +323,7 @@ function runChunkQueue()
   }
 }
 
-function sortchunks()
+/*function sortchunks()
 {
   //furthest away go to the back, to be popped for reuse
   chunkpool.sort((a,b)=>{ 
@@ -340,7 +345,7 @@ function sortchunks()
       return 0;
     }
   })
-}
+}*/
 
 //INITIALIZE CHUNKS FOR WORLD
 for(let i = 0; i < 32; i++)
