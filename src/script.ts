@@ -32,10 +32,12 @@ class World
 {
   data: Map<string, string>
   hasblockmarks: Map<string, string>
+  fullblockmarks: Map<string,string>
   constructor()
   {
     this.data = new Map();
     this.hasblockmarks = new Map();
+    this.fullblockmarks = new Map();
   }
   generate = () =>
   {
@@ -50,7 +52,7 @@ class World
       {
         for(let k = -20; k < 20; k++)
         {
-          //let blockCount = 0;
+          let blockCount = 0;
 
 
             for(var o = 0; o < chunk_width; o++)
@@ -68,17 +70,17 @@ class World
                 let n = ImprovedNoise.noise(REAL_WORLD_X/25.340, 34.425, REAL_WORLD_Z/25.65)*15;
 
                 if((REAL_WORLD_Y < n)) { 
-                  //blockCount++;
+                  blockCount++;
 
                   if(!(this.hasblockmarks.has(""+i+","+j+","+k)))
                   {
                     
                     this.hasblockmarks.set(""+i+","+j+","+k, "1") //Chunk level (zoomed out)
                   }
-                  // if(blockCount >= chunk_width*chunk_width*chunk_width)
-                  // {
-                  //   this.hasblockmarks.delete(""+i+","+j+","+k); // Remove it if its full for now
-                  // }
+                  if(blockCount >= chunk_width*chunk_width*chunk_width)
+                  {
+                    this.fullblockmarks.set(""+i+","+j+","+k, "1"); // Remove it if its full for now
+                  }
                   this.data.set(""+REAL_WORLD_X+','+REAL_WORLD_Y+','+REAL_WORLD_Z, '1') // Real world level (micro)
                 }
               }
@@ -173,6 +175,88 @@ class Chunk
     this.y = newy;
     let newVerts = new Array<number>();
     let newNorms = new Array<number>();
+    if(world.fullblockmarks.has(""+this.x+","+this.y+","+this.z))
+    {
+      if(!world.fullblockmarks.has(""+(this.x-1)+","+this.y+","+this.z) || !world.hasblockmarks.has(""+(this.x-1)+","+this.y+","+this.z)) {
+        //left
+        newVerts.push(0,0,0);
+        newVerts.push(0,0,chunk_width);
+        newVerts.push(0,chunk_width,chunk_width);
+        newVerts.push(0,chunk_width,chunk_width);
+        newVerts.push(0,chunk_width,0);
+        newVerts.push(0,0,0);
+        for(let h = 0; h < 6; h++)
+        {
+          newNorms.push(-1, 0, 0);
+        }
+      }
+      if(!world.fullblockmarks.has(""+(this.x)+","+this.y+","+(this.z-1)) || !world.hasblockmarks.has(""+(this.x-1)+","+this.y+","+this.z)) {
+      //front
+      newVerts.push(0,0,0);
+      newVerts.push(0,chunk_width,0);
+      newVerts.push(chunk_width,chunk_width,0);
+      newVerts.push(chunk_width,chunk_width,0);
+      newVerts.push(chunk_width,0,0);
+      newVerts.push(0,0,0);
+      for(let h = 0; h < 6; h++)
+      {
+        newNorms.push(0, 0, -1);
+      }
+    }
+    if(!world.fullblockmarks.has(""+(this.x+1)+","+this.y+","+this.z) || !world.hasblockmarks.has(""+(this.x-1)+","+this.y+","+this.z)) {
+      //right
+      newVerts.push(chunk_width,0,0);
+      newVerts.push(chunk_width,chunk_width,0);
+      newVerts.push(chunk_width,chunk_width,chunk_width);
+      newVerts.push(chunk_width,chunk_width,chunk_width);
+      newVerts.push(chunk_width,0,chunk_width);
+      newVerts.push(chunk_width,0,0);
+      for(let h = 0; h < 6; h++)
+      {
+        newNorms.push(1, 0, 0);
+      }
+    }
+    if(!world.fullblockmarks.has(""+(this.x)+","+this.y+","+this.z+1) || !world.hasblockmarks.has(""+(this.x-1)+","+this.y+","+this.z)) {
+      //back
+      newVerts.push(chunk_width,0,chunk_width);
+      newVerts.push(chunk_width,chunk_width,chunk_width);
+      newVerts.push(0,chunk_width,chunk_width);
+      newVerts.push(0,chunk_width,chunk_width);
+      newVerts.push(0,0,chunk_width);
+      newVerts.push(chunk_width,0,chunk_width);
+      for(let h = 0; h < 6; h++)
+      {
+        newNorms.push(0, 0, 1);
+      }
+    }
+    if(!world.fullblockmarks.has(""+(this.x)+","+(this.y-1)+","+this.z) || !world.hasblockmarks.has(""+(this.x-1)+","+this.y+","+this.z)) {
+      //bottom
+      newVerts.push(0,0,chunk_width);
+      newVerts.push(0,0,0);
+      newVerts.push(chunk_width,0,0);
+      newVerts.push(chunk_width,0,0);
+      newVerts.push(chunk_width,0,chunk_width);
+      newVerts.push(0,0,chunk_width);
+      for(let h = 0; h < 6; h++)
+      {
+        newNorms.push(0, -1, 0);
+      }
+    }
+    if(!world.fullblockmarks.has(""+(this.x)+","+(this.y+1)+","+this.z) || !world.hasblockmarks.has(""+(this.x-1)+","+this.y+","+this.z)) {
+      //top
+      newVerts.push(0,chunk_width,0);
+      newVerts.push(0,chunk_width,chunk_width);
+      newVerts.push(chunk_width,chunk_width,chunk_width);
+      newVerts.push(chunk_width,chunk_width,chunk_width);
+      newVerts.push(chunk_width,chunk_width,0);
+      newVerts.push(0,chunk_width,0);
+      for(let h = 0; h < 6; h++)
+      {
+        newNorms.push(0, 1, 0);
+      }
+    }
+
+    } else {
     for(let j = 0; j < chunk_width; j++)
     {
       for(let i = 0; i < chunk_width; i++)
@@ -263,6 +347,8 @@ class Chunk
         }
       }
     }
+
+  }
     this.vertices = new Float32Array(newVerts);
     this.meshGeometry.setAttribute(
       "position", 
@@ -284,7 +370,7 @@ let neededChunks = new Map();
 
 
 let mapTimer = 0;
-let mapInterval = 10;
+let mapInterval = 20;
 
 function updatechunks()
 {
@@ -292,9 +378,9 @@ function updatechunks()
 
     for(let y = -chunk_width*2; y < chunk_width*8; y+=16)
     {
-      for(let i = -chunk_width*8; i < chunk_width*8; i+=16)
+      for(let i = -chunk_width*10; i < chunk_width*10; i+=16)
       {
-        for(let k = -chunk_width*8; k < chunk_width*8; k+=16)
+        for(let k = -chunk_width*10; k < chunk_width*10; k+=16)
         {
           let x = Math.round((i+camera.position.x)/16);
           let z = Math.round((k+camera.position.z)/16);
@@ -319,36 +405,15 @@ function updatechunks()
 let chunkLoadTimer = 0;
 let chunkLoadInterval = 0;
 
-let chunkSortTimer = 0;
-let chunkSortInterval = 8;
-
 function runChunkQueue()
 {
     if(chunkLoadTimer > chunkLoadInterval && neededChunks.size != 0)
     {
       chunkLoadTimer = 0;
       const needed = Array.from(neededChunks.values());
-      /*needed.sort((a,b)=>{  
-        let aDistance = Math.sqrt(Math.pow(a.x - camera.position.x, 2) + Math.pow(a.z - camera.position.z, 2));
-        let bDistance = Math.sqrt(Math.pow(b.x - camera.position.x, 2) + Math.pow(b.z -camera.position.z, 2));
-          if(aDistance > bDistance)
-          {
-            return 1;
-          }
-          else if(aDistance < bDistance)
-          {
-            return -1s
-          }
-          else{
-            return 0;
-          }  })*/
+
       const neededSpot= needed[0];
-      /*if(chunkSortTimer >= chunkSortInterval) {
-        sortchunks();
-      }
-      else{
-        chunkSortTimer++;
-      }*/
+
 
       let grabbedMesh = chunkpool.pop();
       if(grabbedMesh != null)
@@ -371,30 +436,6 @@ function runChunkQueue()
     }
   
 }
-
-/*function sortchunks()
-{
-  //furthest away go to the back, to be popped for reuse
-  chunkpool.sort((a,b)=>{ 
-    if((<Chunk>a).vertices.length < 10)
-    {
-      return 1;
-    }
-    let aDistance = Math.sqrt(Math.pow(camera.position.x - (<Chunk>a).x, 2) + Math.pow(camera.position.z - (<Chunk>a).z, 2));
-    let bDistance = Math.sqrt(Math.pow(camera.position.x-(<Chunk>b).x, 2) + Math.pow(camera.position.z-(<Chunk>b).z, 2));
-    if(aDistance > bDistance)
-    {
-      return 1;
-    }
-    else if(aDistance < bDistance)
-    {
-      return -1
-    }
-    else{
-      return 0;
-    }
-  })
-}*/
 
 //INITIALIZE CHUNKS FOR WORLD
 for(let i = 0; i < 16; i++)
@@ -496,8 +537,16 @@ const animate = () => {
   {
     camera.position.y -= 0.2;
   }
-  
+  if(mapTimer >= mapInterval)
+  {
+    mapTimer = 0;
     updatechunks();
+  }
+  else 
+  {
+    mapTimer++;
+  }
+
   
 
   runChunkQueue();
