@@ -42,8 +42,8 @@ class World
   generate = () =>
   {
     let REAL_WORLD_X: number;
-    let REAL_WORLD_Y;
-    let REAL_WORLD_Z;
+    let REAL_WORLD_Y: number;
+    let REAL_WORLD_Z: number;
 
 
     for(let j = -2; j < 2; j++)
