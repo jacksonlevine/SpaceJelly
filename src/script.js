@@ -4,36 +4,41 @@ import { PointerLockControls } from "three/examples/jsm/controls/PointerLockCont
 import ImprovedNoise from "./perlin.js";
 
 let start = new Date();
-const TimeStartedProgram: number = start.getUTCSeconds();
+const TimeStartedProgram = start.getUTCSeconds();
 
 let chunk_width = 16;
 
-enum InputState {
-  left = 1 << 0,
-  right = 1 << 1,
-  back = 1 << 2,
-  forward = 1 << 3,
-  up = 1 << 4,
-  down = 1 << 5,
+class InputState {
+  constructor()
+  {
+    this.left = false;
+    this.right = false;
+    this.back = false;
+    this.forward = false;
+    this.up = false;
+    this.down = false;
+  }
+  
 }
 
 class InputHandler {
-  ActiveState: InputState;
+  constructor()
+  {
+    this.ActiveState = new InputState();
+  }
 }
 
 class World {
-  data: Map<string, string>;
-  hasblockmarks: Map<string, string>;
-  fullblockmarks: Map<string, string>;
+
   constructor() {
     this.data = new Map();
     this.hasblockmarks = new Map();
     this.fullblockmarks = new Map();
   }
   generate = () => {
-    let REAL_WORLD_X: number;
-    let REAL_WORLD_Y: number;
-    let REAL_WORLD_Z: number;
+    let REAL_WORLD_X;
+    let REAL_WORLD_Y;
+    let REAL_WORLD_Z;
 
     for (let j = -2; j < 2; j++) {
       for (let i = -20; i < 20; i++) {
@@ -82,9 +87,9 @@ world.generate();
 let input = new InputHandler();
 
 // Canvas
-const canvas: HTMLElement | null = document.querySelector("canvas");
+const canvas = document.querySelector("canvas");
 
-const backfogcolor: THREE.ColorRepresentation = 0xcccccc;
+const backfogcolor = 0xcccccc;
 
 // Scene
 const scene = new THREE.Scene();
@@ -112,7 +117,7 @@ scene.add(pointLight);
 // Controls
 const controls = new PointerLockControls(
   camera,
-  <HTMLElement | undefined>canvas
+  canvas
 );
 // controls.enableDamping = false; // use to give a sense of weight
 // controls.constrainVertical = true;
@@ -131,12 +136,7 @@ const meshMaterial = new THREE.MeshLambertMaterial({
 });
 
 class Chunk {
-  meshGeometry: THREE.BufferGeometry;
-  vertices: Float32Array;
-  mesh: THREE.Mesh;
-  x: number;
-  z: number;
-  y: number;
+
   constructor() {
     this.meshGeometry = new THREE.BufferGeometry();
     this.vertices = new Float32Array(3);
@@ -149,8 +149,8 @@ class Chunk {
     this.x = newx;
     this.z = newz;
     this.y = newy;
-    let newVerts = new Array<number>();
-    let newNorms = new Array<number>();
+    let newVerts = new Array();
+    let newNorms = new Array();
     if (world.fullblockmarks.has("" + this.x + "," + this.y + "," + this.z)) {
       if (
         !world.fullblockmarks.has(
@@ -466,25 +466,25 @@ function runChunkQueue() {
       if (
         mappedChunks.has(
           "" +
-            (<Chunk>grabbedMesh).x +
+            (grabbedMesh).x +
             "," +
-            (<Chunk>grabbedMesh).y +
+            (grabbedMesh).y +
             "," +
-            (<Chunk>grabbedMesh).z
+            (grabbedMesh).z
         )
       ) {
         mappedChunks.delete(
           "" +
-            (<Chunk>grabbedMesh).x +
+            (grabbedMesh).x +
             "," +
-            (<Chunk>grabbedMesh).y +
+            (grabbedMesh).y +
             "," +
-            (<Chunk>grabbedMesh).z
+            (grabbedMesh).z
         );
       }
-      scene.remove((<Chunk>grabbedMesh).mesh);
-      (<Chunk>grabbedMesh).buildmesh(neededSpot.x, neededSpot.y, neededSpot.z);
-      scene.add((<Chunk>grabbedMesh).mesh);
+      scene.remove((grabbedMesh).mesh);
+      (grabbedMesh).buildmesh(neededSpot.x, neededSpot.y, neededSpot.z);
+      scene.add((grabbedMesh).mesh);
       chunkpool.unshift(grabbedMesh);
       mappedChunks.set(
         "" + neededSpot.x + "," + neededSpot.y + "," + neededSpot.z,
@@ -505,7 +505,7 @@ for (let i = 0; i < 16; i++) {
     for (let a = 0; a < 16; a++) {
       let testChunk = new Chunk();
       testChunk.mesh.frustumCulled = false;
-      (<Array<Chunk>>chunkpool).push(testChunk);
+      chunkpool.push(testChunk);
       scene.add(testChunk.mesh);
     }
   }
@@ -514,22 +514,22 @@ for (let i = 0; i < 16; i++) {
 const onKeyDown = function (event) {
   switch (event.code) {
     case "KeyW":
-      input.ActiveState |= InputState.forward;
+      input.ActiveState.forward = true;
       break;
     case "KeyA":
-      input.ActiveState |= InputState.left;
+      input.ActiveState.left = true;
       break;
     case "KeyS":
-      input.ActiveState |= InputState.back;
+      input.ActiveState.back = true;
       break;
     case "KeyD":
-      input.ActiveState |= InputState.right;
+      input.ActiveState.right = true;
       break;
     case "Space":
-      input.ActiveState |= InputState.up;
+      input.ActiveState.up = true;
       break;
     case "ShiftLeft":
-      input.ActiveState |= InputState.down;
+      input.ActiveState.down = true;
       break;
   }
 };
@@ -538,22 +538,22 @@ document.addEventListener("keydown", onKeyDown, false);
 const onKeyUp = function (event) {
   switch (event.code) {
     case "KeyW":
-      input.ActiveState ^= InputState.forward;
+      input.ActiveState.forward = false;
       break;
     case "KeyA":
-      input.ActiveState ^= InputState.left;
+      input.ActiveState.left = false;
       break;
     case "KeyS":
-      input.ActiveState ^= InputState.back;
+      input.ActiveState.back = false;
       break;
     case "KeyD":
-      input.ActiveState ^= InputState.right;
+      input.ActiveState.right = false;
       break;
     case "Space":
-      input.ActiveState ^= InputState.up;
+      input.ActiveState.up = false;
       break;
     case "ShiftLeft":
-      input.ActiveState ^= InputState.down;
+      input.ActiveState.down = false;
       break;
   }
 };
@@ -561,7 +561,7 @@ document.addEventListener("keyup", onKeyUp, false);
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({
-  canvas: <HTMLCanvasElement | OffscreenCanvas | undefined>canvas, // Canvas is the canvas element from html
+  canvas: canvas, // Canvas is the canvas element from html
   alpha: true,
 });
 renderer.setClearColor(backfogcolor, 1);
@@ -571,22 +571,22 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Avoid pixelatio
 // Animate
 const animate = () => {
   // // Update the controls
-  if (input.ActiveState & InputState.forward) {
+  if (input.ActiveState.forward) {
     controls.moveForward(0.25);
   }
-  if (input.ActiveState & InputState.back) {
+  if (input.ActiveState.back) {
     controls.moveForward(-0.25);
   }
-  if (input.ActiveState & InputState.right) {
+  if (input.ActiveState.right) {
     controls.moveRight(0.25);
   }
-  if (input.ActiveState & InputState.left) {
+  if (input.ActiveState.left) {
     controls.moveRight(-0.25);
   }
-  if (input.ActiveState & InputState.up) {
+  if (input.ActiveState.up) {
     camera.position.y += 0.2;
   }
-  if (input.ActiveState & InputState.down) {
+  if (input.ActiveState.down) {
     camera.position.y -= 0.2;
   }
   if (mapTimer >= mapInterval) {
